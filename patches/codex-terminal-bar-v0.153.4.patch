@@ -1,0 +1,395 @@
+diff --git a/codex-rs/tui/src/bottom_pane/status_line_setup.rs b/codex-rs/tui/src/bottom_pane/status_line_setup.rs
+index a5f728e..424c6d4 100644
+--- a/codex-rs/tui/src/bottom_pane/status_line_setup.rs
++++ b/codex-rs/tui/src/bottom_pane/status_line_setup.rs
+@@ -107,10 +107,10 @@ pub(crate) enum StatusLineItem {
+     #[strum(to_string = "context-used", serialize = "context-usage")]
+     ContextUsed,
+ 
+-    /// Remaining usage on the primary rate limit.
++    /// Percentage used on the primary rate limit.
+     FiveHourLimit,
+ 
+-    /// Remaining usage on the secondary rate limit.
++    /// Percentage used on the secondary rate limit.
+     WeeklyLimit,
+ 
+     /// Codex application version.
+@@ -181,10 +181,10 @@ impl StatusLineItem {
+                 "Percentage of context window used (omitted when unknown)"
+             }
+             StatusLineItem::FiveHourLimit => {
+-                "Remaining usage on the primary usage limit (omitted when unavailable)"
++                "Percentage used on the primary usage limit (omitted when unavailable)"
+             }
+             StatusLineItem::WeeklyLimit => {
+-                "Remaining usage on the secondary usage limit (omitted when unavailable)"
++                "Percentage used on the secondary usage limit (omitted when unavailable)"
+             }
+             StatusLineItem::CodexVersion => "Codex application version",
+             StatusLineItem::ContextWindowSize => {
+diff --git a/codex-rs/tui/src/bottom_pane/status_surface_preview.rs b/codex-rs/tui/src/bottom_pane/status_surface_preview.rs
+index c0ce0f6..68ab928 100644
+--- a/codex-rs/tui/src/bottom_pane/status_surface_preview.rs
++++ b/codex-rs/tui/src/bottom_pane/status_surface_preview.rs
+@@ -253,37 +253,37 @@ fn rate_limit_preview_copy(value: &str) -> Option<RateLimitPreviewCopy> {
+     if value.starts_with("secondary usage ") {
+         Some(RateLimitPreviewCopy {
+             name: "secondary-usage-limit",
+-            description: "Remaining usage on the secondary usage limit (omitted when unavailable)",
++            description: "Percentage used on the secondary usage limit (omitted when unavailable)",
+         })
+     } else if value.starts_with("usage ") {
+         Some(RateLimitPreviewCopy {
+             name: "usage-limit",
+-            description: "Remaining usage on the primary usage limit (omitted when unavailable)",
++            description: "Percentage used on the primary usage limit (omitted when unavailable)",
+         })
+     } else if value.starts_with("5h ") {
+         Some(RateLimitPreviewCopy {
+             name: "five-hour-limit",
+-            description: "Remaining usage on the 5-hour usage limit (omitted when unavailable)",
++            description: "Percentage used on the 5-hour usage limit (omitted when unavailable)",
+         })
+     } else if value.starts_with("daily ") {
+         Some(RateLimitPreviewCopy {
+             name: "daily-limit",
+-            description: "Remaining usage on the daily usage limit (omitted when unavailable)",
++            description: "Percentage used on the daily usage limit (omitted when unavailable)",
+         })
+     } else if value.starts_with("weekly ") {
+         Some(RateLimitPreviewCopy {
+             name: "weekly-limit",
+-            description: "Remaining usage on the weekly usage limit (omitted when unavailable)",
++            description: "Percentage used on the weekly usage limit (omitted when unavailable)",
+         })
+     } else if value.starts_with("monthly ") {
+         Some(RateLimitPreviewCopy {
+             name: "monthly-limit",
+-            description: "Remaining usage on the monthly usage limit (omitted when unavailable)",
++            description: "Percentage used on the monthly usage limit (omitted when unavailable)",
+         })
+     } else if value.starts_with("annual ") {
+         Some(RateLimitPreviewCopy {
+             name: "annual-limit",
+-            description: "Remaining usage on the annual usage limit (omitted when unavailable)",
++            description: "Percentage used on the annual usage limit (omitted when unavailable)",
+         })
+     } else {
+         None
+diff --git a/codex-rs/tui/src/bottom_pane/title_setup.rs b/codex-rs/tui/src/bottom_pane/title_setup.rs
+index 146d684..aaea0c7 100644
+--- a/codex-rs/tui/src/bottom_pane/title_setup.rs
++++ b/codex-rs/tui/src/bottom_pane/title_setup.rs
+@@ -60,9 +60,9 @@ pub(crate) enum TerminalTitleItem {
+     /// Percentage of context window used.
+     #[strum(to_string = "context-used", serialize = "context-usage")]
+     ContextUsed,
+-    /// Remaining usage on the primary rate limit.
++    /// Percentage used on the primary rate limit.
+     FiveHourLimit,
+-    /// Remaining usage on the secondary rate limit.
++    /// Percentage used on the secondary rate limit.
+     WeeklyLimit,
+     /// Codex application version.
+     CodexVersion,
+@@ -113,10 +113,10 @@ impl TerminalTitleItem {
+                 "Percentage of context window used (omitted when unknown)"
+             }
+             TerminalTitleItem::FiveHourLimit => {
+-                "Remaining usage on the primary usage limit (omitted when unavailable)"
++                "Percentage used on the primary usage limit (omitted when unavailable)"
+             }
+             TerminalTitleItem::WeeklyLimit => {
+-                "Remaining usage on the secondary usage limit (omitted when unavailable)"
++                "Percentage used on the secondary usage limit (omitted when unavailable)"
+             }
+             TerminalTitleItem::CodexVersion => "Codex application version",
+             TerminalTitleItem::UsedTokens => "Total tokens used in session (omitted when zero)",
+diff --git a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_model_with_reasoning_fast_footer.snap b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_model_with_reasoning_fast_footer.snap
+index 2ac794d..bf04852 100644
+--- a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_model_with_reasoning_fast_footer.snap
++++ b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_model_with_reasoning_fast_footer.snap
+@@ -6,4 +6,4 @@ expression: normalized_backend_snapshot(terminal.backend())
+ "                                                                                "
+ "› Ask Codex to do anything                                                      "
+ "                                                                                "
+-"  gpt-5.4 xhigh fast · Context 0% used · /tmp/project                           "
++"  gpt-5.4 xhigh fast · Context [░░░░░░░░░░] 0% used · /tmp/project              "
+diff --git a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_setup_popup_rate_limits.snap b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_setup_popup_rate_limits.snap
+index 7dca3c1..891d180 100644
+--- a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_setup_popup_rate_limits.snap
++++ b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_line_setup_popup_rate_limits.snap
+@@ -9,12 +9,12 @@ expression: status_line_popup_snapshot(&mut chat)
+   >
+ › [x] Use theme colors      Apply colors from the active /theme
+   ───────────────────────
+-  [x] monthly-limit         Remaining usage on the monthly usage limit (omitted when unavailable)
+-  [x] weekly-limit          Remaining usage on the weekly usage limit (omitted when unavailable)
++  [x] monthly-limit         Percentage used on the monthly usage limit (omitted when unavailable)
++  [x] weekly-limit          Percentage used on the weekly usage limit (omitted when unavailable)
+   [ ] model                 Current model name
+   [ ] model-with-reasoning  Current model name with reasoning level
+   [ ] reasoning             Current reasoning level
+   [ ] current-dir           Current working directory
+ 
+-  monthly 65% left · weekly 50% left
++  monthly [████░░░░░░] 35% · weekly [█████░░░░░] 50%
+   Press space to toggle; ←/→ to move; enter to confirm and close; esc to close
+diff --git a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_surface_previews_rate_limits.snap b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_surface_previews_rate_limits.snap
+index 4ac0747..d99908b 100644
+--- a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_surface_previews_rate_limits.snap
++++ b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__status_surface_previews_rate_limits.snap
+@@ -2,5 +2,5 @@
+ source: tui/src/chatwidget/tests/status_surface_previews.rs
+ expression: snapshot
+ ---
+-status line: monthly 65% left · weekly 50% left
+-terminal title: monthly 65% left | weekly 50% left
++status line: monthly [████░░░░░░] 35% · weekly [█████░░░░░] 50%
++terminal title: monthly [████░░░░░░] 35% | weekly [█████░░░░░] 50%
+diff --git a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__terminal_title_setup_popup_rate_limits.snap b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__terminal_title_setup_popup_rate_limits.snap
+index c821ddc..f8904f8 100644
+--- a/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__terminal_title_setup_popup_rate_limits.snap
++++ b/codex-rs/tui/src/chatwidget/snapshots/codex_tui__chatwidget__tests__terminal_title_setup_popup_rate_limits.snap
+@@ -7,8 +7,8 @@ expression: terminal_title_popup_snapshot(&mut chat)
+ 
+   Type to search
+   >
+-› [x] monthly-limit  Remaining usage on the monthly usage limit (omitted when unavailable)
+-  [x] weekly-limit   Remaining usage on the weekly usage limit (omitted when unavailable)
++› [x] monthly-limit  Percentage used on the monthly usage limit (omitted when unavailable)
++  [x] weekly-limit   Percentage used on the weekly usage limit (omitted when unavailable)
+   [ ] app-name       Codex app name
+   [ ] project-name   Project name (falls back to current directory name)
+   [ ] current-dir    Current working directory
+@@ -16,5 +16,5 @@ expression: terminal_title_popup_snapshot(&mut chat)
+   [ ] run-state      Compact session run-state text (Ready, Working, Thinking)
+   [ ] thread-title   Current thread title, or thread identifier when unnamed
+ 
+-  monthly 65% left | weekly 50% left
++  monthly [████░░░░░░] 35% | weekly [█████░░░░░] 50%
+   Press space to toggle; ←/→ to move; enter to confirm and close; esc to close
+diff --git a/codex-rs/tui/src/chatwidget/status_controls.rs b/codex-rs/tui/src/chatwidget/status_controls.rs
+index 8ebdf0f..fd8f37d 100644
+--- a/codex-rs/tui/src/chatwidget/status_controls.rs
++++ b/codex-rs/tui/src/chatwidget/status_controls.rs
+@@ -6,6 +6,11 @@
+ 
+ use super::*;
+ 
++pub(super) fn percentage_bar(percent: i64) -> String {
++    let filled = ((percent.clamp(0, 100) + 5) / 10) as usize;
++    format!("[{}{}]", "█".repeat(filled), "░".repeat(10 - filled))
++}
++
+ impl ChatWidget {
+     /// Update the status indicator header and details.
+     ///
+@@ -410,8 +415,9 @@ impl ChatWidget {
+         label: &str,
+     ) -> Option<String> {
+         let window = window?;
+-        let remaining = (100.0f64 - window.used_percent).clamp(0.0f64, 100.0f64);
+-        Some(format!("{label} {remaining:.0}% left"))
++        let used = window.used_percent.clamp(0.0f64, 100.0f64);
++        let bar = percentage_bar(used.round() as i64);
++        Some(format!("{label} {bar} {used:.0}%"))
+     }
+ 
+     pub(super) fn status_line_reasoning_effort_label(
+diff --git a/codex-rs/tui/src/chatwidget/status_surfaces.rs b/codex-rs/tui/src/chatwidget/status_surfaces.rs
+index e79c0d3..6f4a2da 100644
+--- a/codex-rs/tui/src/chatwidget/status_surfaces.rs
++++ b/codex-rs/tui/src/chatwidget/status_surfaces.rs
+@@ -3,6 +3,7 @@
+ //! Keeping this logic in a focused submodule makes the additive title/status
+ //! behavior easier to review without paging through the rest of `chatwidget.rs`.
+ 
++use super::status_controls::percentage_bar;
+ use super::*;
+ use crate::bottom_pane::status_line_from_segments;
+ use crate::branch_summary;
+@@ -713,7 +714,7 @@ impl ChatWidget {
+                 .map(|remaining| format!("Context {remaining}% left")),
+             StatusLineItem::ContextUsed => self
+                 .status_line_context_used_percent()
+-                .map(|used| format!("Context {used}% used")),
++                .map(|used| format!("Context {} {used}% used", percentage_bar(used))),
+             StatusLineItem::FiveHourLimit => {
+                 let (window, is_secondary) = self
+                     .rate_limit_snapshots_by_limit_id
+diff --git a/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs b/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
+index 762e701..47b55b5 100644
+--- a/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
++++ b/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
+@@ -9,6 +9,28 @@ use pretty_assertions::assert_eq;
+ use ratatui::backend::TestBackend;
+ use serial_test::serial;
+ 
++#[test]
++fn percentage_bars_cover_empty_partial_full_and_out_of_range_values() {
++    let rendered = [-10, 0, 4, 5, 26, 74, 96, 100, 110]
++        .into_iter()
++        .map(|percent| {
++            let bar = super::super::status_controls::percentage_bar(percent);
++            format!("{percent:>3}% {bar}")
++        })
++        .collect::<Vec<_>>()
++        .join("\n");
++    insta::assert_snapshot!(rendered, @"
++    -10% [░░░░░░░░░░]
++      0% [░░░░░░░░░░]
++      4% [░░░░░░░░░░]
++      5% [█░░░░░░░░░]
++     26% [███░░░░░░░]
++     74% [███████░░░]
++     96% [██████████]
++    100% [██████████]
++    110% [██████████]
++    ");
++}
+ fn enable_test_ambient_pet(chat: &mut ChatWidget) {
+     chat.set_pet_image_support_for_tests(crate::pets::PetImageSupport::Supported(
+         crate::pets::ImageProtocol::Kitty,
+@@ -85,7 +107,7 @@ async fn resumed_session_hides_unknown_token_usage_until_an_update_arrives() {
+     chat.refresh_status_line();
+     assert_eq!(
+         status_line_text(&chat),
+-        Some("Context 30% left · Context 70% used · 0 in · 0 out".to_string())
++        Some("Context 30% left · Context [███████░░░] 70% used · 0 in · 0 out".to_string())
+     );
+ }
+ 
+@@ -715,7 +737,7 @@ async fn status_line_uses_secondary_fallback_for_unsupported_window() {
+ 
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
+-        Some("secondary usage 50% left".to_string())
++        Some("secondary usage [█████░░░░░] 50%".to_string())
+     );
+ }
+ 
+@@ -745,11 +767,11 @@ async fn status_line_legacy_limit_items_prefer_matching_windows() {
+ 
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
+-        Some("5h 60% left".to_string())
++        Some("5h [████░░░░░░] 40%".to_string())
+     );
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
+-        Some("weekly 6% left".to_string())
++        Some("weekly [█████████░] 94%".to_string())
+     );
+ }
+ 
+@@ -779,11 +801,11 @@ async fn status_line_shows_secondary_non_weekly_when_primary_is_weekly() {
+ 
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
+-        Some("monthly 65% left".to_string())
++        Some("monthly [████░░░░░░] 35%".to_string())
+     );
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
+-        Some("weekly 6% left".to_string())
++        Some("weekly [█████████░] 94%".to_string())
+     );
+ }
+ 
+@@ -813,7 +835,7 @@ async fn status_line_five_hour_item_omits_weekly_only_limit() {
+     );
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
+-        Some("weekly 91% left".to_string())
++        Some("weekly [█░░░░░░░░░] 9%".to_string())
+     );
+ }
+ 
+@@ -839,7 +861,7 @@ async fn status_line_single_monthly_primary_omits_weekly_limit_item() {
+ 
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
+-        Some("monthly 65% left".to_string())
++        Some("monthly [████░░░░░░] 35%".to_string())
+     );
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
+@@ -873,7 +895,7 @@ async fn status_line_secondary_only_non_weekly_limit_omits_primary_limit_item()
+     );
+     assert_eq!(
+         chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
+-        Some("monthly 65% left".to_string())
++        Some("monthly [████░░░░░░] 35%".to_string())
+     );
+ }
+ 
+@@ -2909,7 +2931,10 @@ async fn status_line_context_used_renders_labeled_percent() {
+ 
+     chat.refresh_status_line();
+ 
+-    assert_eq!(status_line_text(&chat), Some("Context 0% used".to_string()));
++    assert_eq!(
++        status_line_text(&chat),
++        Some("Context [░░░░░░░░░░] 0% used".to_string())
++    );
+     assert!(
+         drain_insert_history(&mut rx).is_empty(),
+         "context-used should remain a valid status line item"
+@@ -2942,7 +2967,10 @@ async fn status_line_legacy_context_usage_renders_context_used_percent() {
+ 
+     chat.refresh_status_line();
+ 
+-    assert_eq!(status_line_text(&chat), Some("Context 0% used".to_string()));
++    assert_eq!(
++        status_line_text(&chat),
++        Some("Context [░░░░░░░░░░] 0% used".to_string())
++    );
+     assert!(
+         drain_insert_history(&mut rx).is_empty(),
+         "legacy context-usage should remain a valid status line item"
+@@ -3970,7 +3998,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
+ 
+     assert_eq!(
+         status_line_text(&chat),
+-        Some(format!("gpt-5.4 xhigh fast · Context 0% used · {test_cwd}"))
++        Some(format!(
++            "gpt-5.4 xhigh fast · Context [░░░░░░░░░░] 0% used · {test_cwd}"
++        ))
+     );
+ 
+     chat.set_model("gpt-5.2");
+@@ -3978,7 +4008,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
+ 
+     assert_eq!(
+         status_line_text(&chat),
+-        Some(format!("gpt-5.2 xhigh · Context 0% used · {test_cwd}"))
++        Some(format!(
++            "gpt-5.2 xhigh · Context [░░░░░░░░░░] 0% used · {test_cwd}"
++        ))
+     );
+ }
+ 
+diff --git a/codex-rs/tui/src/chatwidget/tests/status_surface_previews.rs b/codex-rs/tui/src/chatwidget/tests/status_surface_previews.rs
+index 0a830ff..ee9bcb4 100644
+--- a/codex-rs/tui/src/chatwidget/tests/status_surface_previews.rs
++++ b/codex-rs/tui/src/chatwidget/tests/status_surface_previews.rs
+@@ -375,7 +375,7 @@ async fn status_surface_preview_omits_unavailable_rate_limit_items() {
+             &mut chat,
+             &[StatusLineItem::FiveHourLimit, StatusLineItem::WeeklyLimit]
+         ),
+-        "weekly 91% left"
++        "weekly [█░░░░░░░░░] 9%"
+     );
+     assert_eq!(
+         title_preview_line(
+@@ -385,7 +385,7 @@ async fn status_surface_preview_omits_unavailable_rate_limit_items() {
+                 TerminalTitleItem::WeeklyLimit
+             ],
+         ),
+-        "weekly 91% left"
++        "weekly [█░░░░░░░░░] 9%"
+     );
+ }
+ 
