@@ -3,9 +3,7 @@
 Codex TerminalBar adds compact progress bars to the Codex CLI footer for context usage and the
 five-hour and weekly account limits.
 
-```text
-Context [███░░░░░░░] 30% used · 5h [████░░░░░░] 40% · weekly [██░░░░░░░░] 23%
-```
+<img width="1231" height="108" alt="Screenshot 2026-09-06 195555" src="https://github.com/user-attachments/assets/06797c88-5cca-4612-885b-9d1320db47f3" />
 
 Every bar fills as usage is consumed. The percentage remains visible, and the layout fits in a
 standard 80-column terminal. Limits stay hidden until the account provides rate-limit data.
