@@ -171,22 +171,31 @@ index c821ddc..f8904f8 100644
 +  monthly [████░░░░░░] 35% | weekly [█████░░░░░] 50%
    Press space to toggle; ←/→ to move; enter to confirm and close; esc to close
 diff --git a/codex-rs/tui/src/chatwidget/status_controls.rs b/codex-rs/tui/src/chatwidget/status_controls.rs
-index 8ebdf0f..d8ebe58 100644
+index 8ebdf0f..9b6babb 100644
 --- a/codex-rs/tui/src/chatwidget/status_controls.rs
 +++ b/codex-rs/tui/src/chatwidget/status_controls.rs
-@@ -6,6 +6,11 @@
+@@ -5,6 +5,20 @@
+ //! history-facing `/status` surface.
  
  use super::*;
- 
++use chrono::Utc;
++
 +pub(super) fn percentage_bar(percent: i64) -> String {
 +    let filled = ((percent.clamp(0, 100) + 5) / 10) as usize;
 +    format!("[{}{}]", "█".repeat(filled), "░".repeat(10 - filled))
 +}
 +
++pub(super) fn reset_countdown(reset_at: i64, now: i64) -> String {
++    let remaining_seconds = reset_at.saturating_sub(now).max(0);
++    let remaining_minutes = remaining_seconds.saturating_add(59) / 60;
++    let hours = remaining_minutes / 60;
++    let minutes = remaining_minutes % 60;
++    format!("{hours:02}:{minutes:02}")
++}
+
  impl ChatWidget {
      /// Update the status indicator header and details.
-     ///
-@@ -410,8 +415,14 @@ impl ChatWidget {
+@@ -410,8 +424,13 @@ impl ChatWidget {
          label: &str,
      ) -> Option<String> {
          let window = window?;
@@ -195,11 +204,10 @@ index 8ebdf0f..d8ebe58 100644
 +        let used = window.used_percent.clamp(0.0f64, 100.0f64);
 +        let bar = percentage_bar(used.round() as i64);
 +        let reset = window
-+            .resets_at
-+            .as_ref()
-+            .map(|resets_at| format!(" (resets {resets_at})"))
++            .resets_at_timestamp
++            .map(|reset_at| format!(" {}", reset_countdown(reset_at, Utc::now().timestamp())))
 +            .unwrap_or_default();
-+        Some(format!("{label} {bar} {used:.0}%{reset}"))
++        Some(format!("{label}{reset} {bar} {used:.0}%"))
      }
  
      pub(super) fn status_line_reasoning_effort_label(
@@ -225,10 +233,10 @@ index e79c0d3..6f4a2da 100644
                  let (window, is_secondary) = self
                      .rate_limit_snapshots_by_limit_id
 diff --git a/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs b/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
-index 762e701..037af39 100644
+index 762e701..ae4dc6b 100644
 --- a/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
 +++ b/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
-@@ -9,6 +9,44 @@ use pretty_assertions::assert_eq;
+@@ -9,6 +9,58 @@ use pretty_assertions::assert_eq;
  use ratatui::backend::TestBackend;
  use serial_test::serial;
  
@@ -256,24 +264,38 @@ index 762e701..037af39 100644
 +}
 +
 +#[tokio::test]
-+async fn status_line_limit_display_includes_reset_time_when_available() {
++async fn status_line_limit_display_includes_reset_countdown_when_available() {
 +    let (chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
++    let now = chrono::Utc::now().timestamp();
 +    let window = crate::status::RateLimitWindowDisplay {
 +        used_percent: 40.0,
 +        resets_at: Some("14:30".to_string()),
++        resets_at_timestamp: Some(now + 2 * 60 * 60 + 34 * 60),
 +        window_minutes: Some(5 * 60),
 +    };
 +
 +    assert_eq!(
 +        chat.status_line_limit_display(Some(&window), "5h"),
-+        Some("5h [████░░░░░░] 40% (resets 14:30)".to_string())
++        Some("5h 02:34 [████░░░░░░] 40%".to_string())
++    );
++}
++
++#[test]
++fn reset_countdown_uses_total_hours_and_rounds_up_partial_minutes() {
++    assert_eq!(
++        super::super::status_controls::reset_countdown(435_601, 0),
++        "121:01"
++    );
++    assert_eq!(
++        super::super::status_controls::reset_countdown(120, 121),
++        "00:00"
 +    );
 +}
 +
  fn enable_test_ambient_pet(chat: &mut ChatWidget) {
      chat.set_pet_image_support_for_tests(crate::pets::PetImageSupport::Supported(
          crate::pets::ImageProtocol::Kitty,
-@@ -85,7 +123,7 @@ async fn resumed_session_hides_unknown_token_usage_until_an_update_arrives() {
+@@ -85,7 +137,7 @@ async fn resumed_session_hides_unknown_token_usage_until_an_update_arrives() {
      chat.refresh_status_line();
      assert_eq!(
          status_line_text(&chat),
@@ -282,7 +304,7 @@ index 762e701..037af39 100644
      );
  }
  
-@@ -715,7 +753,7 @@ async fn status_line_uses_secondary_fallback_for_unsupported_window() {
+@@ -715,7 +767,7 @@ async fn status_line_uses_secondary_fallback_for_unsupported_window() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
@@ -291,7 +313,7 @@ index 762e701..037af39 100644
      );
  }
  
-@@ -745,11 +783,11 @@ async fn status_line_legacy_limit_items_prefer_matching_windows() {
+@@ -745,11 +797,11 @@ async fn status_line_legacy_limit_items_prefer_matching_windows() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
@@ -305,7 +327,7 @@ index 762e701..037af39 100644
      );
  }
  
-@@ -779,11 +817,11 @@ async fn status_line_shows_secondary_non_weekly_when_primary_is_weekly() {
+@@ -779,11 +831,11 @@ async fn status_line_shows_secondary_non_weekly_when_primary_is_weekly() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
@@ -319,7 +341,7 @@ index 762e701..037af39 100644
      );
  }
  
-@@ -813,7 +851,7 @@ async fn status_line_five_hour_item_omits_weekly_only_limit() {
+@@ -813,7 +865,7 @@ async fn status_line_five_hour_item_omits_weekly_only_limit() {
      );
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
@@ -328,7 +350,7 @@ index 762e701..037af39 100644
      );
  }
  
-@@ -839,7 +877,7 @@ async fn status_line_single_monthly_primary_omits_weekly_limit_item() {
+@@ -839,7 +891,7 @@ async fn status_line_single_monthly_primary_omits_weekly_limit_item() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
@@ -337,7 +359,7 @@ index 762e701..037af39 100644
      );
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
-@@ -873,7 +911,7 @@ async fn status_line_secondary_only_non_weekly_limit_omits_primary_limit_item()
+@@ -873,7 +925,7 @@ async fn status_line_secondary_only_non_weekly_limit_omits_primary_limit_item()
      );
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
@@ -346,7 +368,7 @@ index 762e701..037af39 100644
      );
  }
  
-@@ -2909,7 +2947,10 @@ async fn status_line_context_used_renders_labeled_percent() {
+@@ -2909,7 +2961,10 @@ async fn status_line_context_used_renders_labeled_percent() {
  
      chat.refresh_status_line();
  
@@ -358,7 +380,7 @@ index 762e701..037af39 100644
      assert!(
          drain_insert_history(&mut rx).is_empty(),
          "context-used should remain a valid status line item"
-@@ -2942,7 +2983,10 @@ async fn status_line_legacy_context_usage_renders_context_used_percent() {
+@@ -2942,7 +2997,10 @@ async fn status_line_legacy_context_usage_renders_context_used_percent() {
  
      chat.refresh_status_line();
  
@@ -370,7 +392,7 @@ index 762e701..037af39 100644
      assert!(
          drain_insert_history(&mut rx).is_empty(),
          "legacy context-usage should remain a valid status line item"
-@@ -3970,7 +4014,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
+@@ -3970,7 +4028,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
  
      assert_eq!(
          status_line_text(&chat),
@@ -381,7 +403,7 @@ index 762e701..037af39 100644
      );
  
      chat.set_model("gpt-5.2");
-@@ -3978,7 +4024,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
+@@ -3978,7 +4038,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
  
      assert_eq!(
          status_line_text(&chat),
@@ -414,3 +436,72 @@ index 0a830ff..ee9bcb4 100644
      );
  }
  
+diff --git a/codex-rs/tui/src/status/rate_limits.rs b/codex-rs/tui/src/status/rate_limits.rs
+index aaf54df..cbe018e 100644
+--- a/codex-rs/tui/src/status/rate_limits.rs
++++ b/codex-rs/tui/src/status/rate_limits.rs
+@@ -71,6 +71,8 @@ pub(crate) struct RateLimitWindowDisplay {
+     pub used_percent: f64,
+     /// Human-readable local reset time.
+     pub resets_at: Option<String>,
++    /// Reset timestamp as Unix seconds.
++    pub resets_at_timestamp: Option<i64>,
+     /// Window length in minutes when provided by the server.
+     pub window_minutes: Option<i64>,
+ }
+@@ -86,6 +88,7 @@ impl RateLimitWindowDisplay {
+         Self {
+             used_percent: f64::from(window.used_percent),
+             resets_at,
++            resets_at_timestamp: window.resets_at,
+             window_minutes: window.window_duration_mins,
+         }
+     }
+@@ -429,6 +432,7 @@ mod tests {
+         RateLimitWindowDisplay {
+             used_percent,
+             resets_at: Some("soon".to_string()),
++            resets_at_timestamp: None,
+             window_minutes: Some(300),
+         }
+     }
+@@ -488,11 +492,13 @@ mod tests {
+             primary: Some(RateLimitWindowDisplay {
+                 used_percent: 20.0,
+                 resets_at: Some("soon".to_string()),
++                resets_at_timestamp: None,
+                 window_minutes: Some(60),
+             }),
+             secondary: Some(RateLimitWindowDisplay {
+                 used_percent: 40.0,
+                 resets_at: Some("later".to_string()),
++                resets_at_timestamp: None,
+                 window_minutes: Some(2 * 60),
+             }),
+             credits: None,
+diff --git a/codex-rs/tui/src/status/tests.rs b/codex-rs/tui/src/status/tests.rs
+index 1515fb8..3a70fd3 100644
+--- a/codex-rs/tui/src/status/tests.rs
++++ b/codex-rs/tui/src/status/tests.rs
+@@ -68,6 +68,7 @@ fn stale_monthly_limit_marks_fresh_rolling_snapshot_stale() {
+         primary: Some(RateLimitWindowDisplay {
+             used_percent: 20.0,
+             resets_at: Some("soon".to_string()),
++            resets_at_timestamp: None,
+             window_minutes: Some(300),
+         }),
+         secondary: None,
+@@ -1782,11 +1783,13 @@ async fn transcript_overlay_remeasures_status_after_rate_limit_refresh() {
+             primary: Some(RateLimitWindowDisplay {
+                 used_percent: 45.0,
+                 resets_at: Some("soon".to_string()),
++                resets_at_timestamp: None,
+                 window_minutes: Some(300),
+             }),
+             secondary: Some(RateLimitWindowDisplay {
+                 used_percent: 30.0,
+                 resets_at: Some("later".to_string()),
++                resets_at_timestamp: None,
+                 window_minutes: Some(10_080),
+             }),
+             credits: None,
