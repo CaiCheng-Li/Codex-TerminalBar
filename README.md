@@ -3,7 +3,7 @@
 Codex TerminalBar adds compact progress bars to the Codex CLI footer for context usage and the
 five-hour and weekly account limits.
 
-<img width="1231" height="108" alt="Screenshot 2026-09-06 195555" src="https://github.com/user-attachments/assets/06797c88-5cca-4612-885b-9d1320db47f3" />
+<img width="1232" height="90" alt="image" src="https://github.com/user-attachments/assets/4cbae717-b09a-4853-b1f1-aaf6f9683ef3" />
 
 Every bar fills as usage is consumed. The percentage remains visible, and account limits show the
 time remaining next to the limit label in `HH:MM` form, such as `5h 02:34` or `weekly 121:07`.
