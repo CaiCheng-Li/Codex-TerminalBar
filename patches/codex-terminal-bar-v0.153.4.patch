@@ -171,7 +171,7 @@ index c821ddc..f8904f8 100644
 +  monthly [████░░░░░░] 35% | weekly [█████░░░░░] 50%
    Press space to toggle; ←/→ to move; enter to confirm and close; esc to close
 diff --git a/codex-rs/tui/src/chatwidget/status_controls.rs b/codex-rs/tui/src/chatwidget/status_controls.rs
-index 8ebdf0f..fd8f37d 100644
+index 8ebdf0f..d8ebe58 100644
 --- a/codex-rs/tui/src/chatwidget/status_controls.rs
 +++ b/codex-rs/tui/src/chatwidget/status_controls.rs
 @@ -6,6 +6,11 @@
@@ -186,7 +186,7 @@ index 8ebdf0f..fd8f37d 100644
  impl ChatWidget {
      /// Update the status indicator header and details.
      ///
-@@ -410,8 +415,9 @@ impl ChatWidget {
+@@ -410,8 +415,14 @@ impl ChatWidget {
          label: &str,
      ) -> Option<String> {
          let window = window?;
@@ -194,7 +194,12 @@ index 8ebdf0f..fd8f37d 100644
 -        Some(format!("{label} {remaining:.0}% left"))
 +        let used = window.used_percent.clamp(0.0f64, 100.0f64);
 +        let bar = percentage_bar(used.round() as i64);
-+        Some(format!("{label} {bar} {used:.0}%"))
++        let reset = window
++            .resets_at
++            .as_ref()
++            .map(|resets_at| format!(" (resets {resets_at})"))
++            .unwrap_or_default();
++        Some(format!("{label} {bar} {used:.0}%{reset}"))
      }
  
      pub(super) fn status_line_reasoning_effort_label(
@@ -220,10 +225,10 @@ index e79c0d3..6f4a2da 100644
                  let (window, is_secondary) = self
                      .rate_limit_snapshots_by_limit_id
 diff --git a/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs b/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
-index 762e701..47b55b5 100644
+index 762e701..037af39 100644
 --- a/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
 +++ b/codex-rs/tui/src/chatwidget/tests/status_and_layout.rs
-@@ -9,6 +9,28 @@ use pretty_assertions::assert_eq;
+@@ -9,6 +9,44 @@ use pretty_assertions::assert_eq;
  use ratatui::backend::TestBackend;
  use serial_test::serial;
  
@@ -249,10 +254,26 @@ index 762e701..47b55b5 100644
 +    110% [██████████]
 +    ");
 +}
++
++#[tokio::test]
++async fn status_line_limit_display_includes_reset_time_when_available() {
++    let (chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
++    let window = crate::status::RateLimitWindowDisplay {
++        used_percent: 40.0,
++        resets_at: Some("14:30".to_string()),
++        window_minutes: Some(5 * 60),
++    };
++
++    assert_eq!(
++        chat.status_line_limit_display(Some(&window), "5h"),
++        Some("5h [████░░░░░░] 40% (resets 14:30)".to_string())
++    );
++}
++
  fn enable_test_ambient_pet(chat: &mut ChatWidget) {
      chat.set_pet_image_support_for_tests(crate::pets::PetImageSupport::Supported(
          crate::pets::ImageProtocol::Kitty,
-@@ -85,7 +107,7 @@ async fn resumed_session_hides_unknown_token_usage_until_an_update_arrives() {
+@@ -85,7 +123,7 @@ async fn resumed_session_hides_unknown_token_usage_until_an_update_arrives() {
      chat.refresh_status_line();
      assert_eq!(
          status_line_text(&chat),
@@ -261,7 +282,7 @@ index 762e701..47b55b5 100644
      );
  }
  
-@@ -715,7 +737,7 @@ async fn status_line_uses_secondary_fallback_for_unsupported_window() {
+@@ -715,7 +753,7 @@ async fn status_line_uses_secondary_fallback_for_unsupported_window() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
@@ -270,7 +291,7 @@ index 762e701..47b55b5 100644
      );
  }
  
-@@ -745,11 +767,11 @@ async fn status_line_legacy_limit_items_prefer_matching_windows() {
+@@ -745,11 +783,11 @@ async fn status_line_legacy_limit_items_prefer_matching_windows() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
@@ -284,7 +305,7 @@ index 762e701..47b55b5 100644
      );
  }
  
-@@ -779,11 +801,11 @@ async fn status_line_shows_secondary_non_weekly_when_primary_is_weekly() {
+@@ -779,11 +817,11 @@ async fn status_line_shows_secondary_non_weekly_when_primary_is_weekly() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
@@ -298,7 +319,7 @@ index 762e701..47b55b5 100644
      );
  }
  
-@@ -813,7 +835,7 @@ async fn status_line_five_hour_item_omits_weekly_only_limit() {
+@@ -813,7 +851,7 @@ async fn status_line_five_hour_item_omits_weekly_only_limit() {
      );
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
@@ -307,7 +328,7 @@ index 762e701..47b55b5 100644
      );
  }
  
-@@ -839,7 +861,7 @@ async fn status_line_single_monthly_primary_omits_weekly_limit_item() {
+@@ -839,7 +877,7 @@ async fn status_line_single_monthly_primary_omits_weekly_limit_item() {
  
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::FiveHourLimit),
@@ -316,7 +337,7 @@ index 762e701..47b55b5 100644
      );
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
-@@ -873,7 +895,7 @@ async fn status_line_secondary_only_non_weekly_limit_omits_primary_limit_item()
+@@ -873,7 +911,7 @@ async fn status_line_secondary_only_non_weekly_limit_omits_primary_limit_item()
      );
      assert_eq!(
          chat.status_line_value_for_item(crate::bottom_pane::StatusLineItem::WeeklyLimit),
@@ -325,7 +346,7 @@ index 762e701..47b55b5 100644
      );
  }
  
-@@ -2909,7 +2931,10 @@ async fn status_line_context_used_renders_labeled_percent() {
+@@ -2909,7 +2947,10 @@ async fn status_line_context_used_renders_labeled_percent() {
  
      chat.refresh_status_line();
  
@@ -337,7 +358,7 @@ index 762e701..47b55b5 100644
      assert!(
          drain_insert_history(&mut rx).is_empty(),
          "context-used should remain a valid status line item"
-@@ -2942,7 +2967,10 @@ async fn status_line_legacy_context_usage_renders_context_used_percent() {
+@@ -2942,7 +2983,10 @@ async fn status_line_legacy_context_usage_renders_context_used_percent() {
  
      chat.refresh_status_line();
  
@@ -349,7 +370,7 @@ index 762e701..47b55b5 100644
      assert!(
          drain_insert_history(&mut rx).is_empty(),
          "legacy context-usage should remain a valid status line item"
-@@ -3970,7 +3998,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
+@@ -3970,7 +4014,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
  
      assert_eq!(
          status_line_text(&chat),
@@ -360,7 +381,7 @@ index 762e701..47b55b5 100644
      );
  
      chat.set_model("gpt-5.2");
-@@ -3978,7 +4008,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
+@@ -3978,7 +4024,9 @@ async fn status_line_model_with_reasoning_includes_fast_for_fast_capable_models(
  
      assert_eq!(
          status_line_text(&chat),

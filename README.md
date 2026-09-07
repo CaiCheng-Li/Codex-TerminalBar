@@ -5,8 +5,9 @@ five-hour and weekly account limits.
 
 <img width="1231" height="108" alt="Screenshot 2026-09-06 195555" src="https://github.com/user-attachments/assets/06797c88-5cca-4612-885b-9d1320db47f3" />
 
-Every bar fills as usage is consumed. The percentage remains visible, and the layout fits in a
-standard 80-column terminal. Limits stay hidden until the account provides rate-limit data.
+Every bar fills as usage is consumed. The percentage remains visible, and account limits show their
+reset time in the local time zone. Resets on a later date include the date. Limits stay hidden until
+the account provides rate-limit data, and the reset suffix is omitted when no timestamp is available.
 
 ## Compatibility
 
@@ -109,11 +110,11 @@ cargo build -p codex-code-mode-host --bin codex-code-mode-host
 ```
 
 The relevant TUI tests are included in the patch. The development build was verified with focused
-tests covering bar rounding, percentage-used rendering, limit-window selection, setup previews,
-and 80-column output.
+tests covering bar rounding, percentage-used rendering, reset-time rendering, limit-window
+selection, setup previews, and 80-column output.
 
 ## How it works
 
-Codex already receives a `usedPercent` value for each quota window. The patch renders that value as
-a ten-cell bar and percentage instead of converting it to a percentage remaining. Context uses the
+Codex already receives a `usedPercent` value and optional reset timestamp for each quota window. The
+patch renders the percentage as a ten-cell bar and appends the reset in local time. Context uses the
 existing context-used calculation and the same bar renderer.
